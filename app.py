@@ -861,46 +861,12 @@ with tabs[1]:
                 unsafe_allow_html=True,
             )
 
-    # ---- Optional: narrative written by Claude -----------------------------
-    st.divider()
-    section("✦ Executive narrative written by Claude (optional)",
-            "Sends an anonymous, aggregated summary of the filtered results — never raw rows — to the Anthropic API.")
-    key = _secret("ANTHROPIC_API_KEY")
-    a1, a2, a3 = st.columns([2, 1.2, 1])
-    with a1:
-        if not key:
-            key = st.text_input("Anthropic API key", type="password",
-                                help="Or set ANTHROPIC_API_KEY in .streamlit/secrets.toml / environment.")
-        else:
-            st.success("API key loaded from secrets.")
-    with a2:
-        model = st.text_input("Model", value=_secret("ANTHROPIC_MODEL") or "claude-sonnet-5-5")
-    with a3:
-        st.write("")
-        go_ai = st.button("✦ Generate narrative", type="primary", width="stretch", disabled=not key)
-
-    payload = ai.build_payload(df, ASPECTS, QUESTIONS)
-    cache_key = f"ai_{hash(str(payload))}_{model}"
-    if go_ai and key:
-        with st.spinner("Claude is reading the results…"):
-            try:
-                st.session_state[cache_key] = ai.ai_narrative(payload, key, model)
-            except Exception as exc:  # noqa: BLE001
-                st.error(f"Couldn't get a narrative: {type(exc).__name__}: {exc}")
-    if cache_key in st.session_state:
-        with st.container(border=True):
-            st.markdown(st.session_state[cache_key])
-    elif not key:
-        st.caption("Without a key, everything above still works — it's produced by the built-in analysis engine.")
-
     # ---- Export ---------------------------------------------------------------
     md = [f"# Uber Ireland CX — AI insights\n\n_{N} responses · {report.confidence}_\n\n**{report.headline}**\n",
           "## Highlights"] + [f"- **{f.title}** — {f.text} _({f.evidence})_" for f in report.highlights] + \
          ["\n## Lowlights"] + [f"- **{f.title}** — {f.text} _({f.evidence})_" for f in report.lowlights] + \
          ["\n## Watch-outs & levers"] + [f"- **{f.title}** — {f.text} _({f.evidence})_" for f in report.watch] + \
          ["\n## Recommended actions"] + [f"- [{r.priority}] {r.action} — {r.why}" for r in report.recommendations]
-    if cache_key in st.session_state:
-        md += ["\n## Claude narrative\n", st.session_state[cache_key]]
     st.download_button("⬇ Download insights (Markdown)", "\n".join(md).encode("utf-8"),
                        "uber_cx_ai_insights.md", "text/markdown")
 
