@@ -3,3 +3,4 @@ plotly>=6.0
 pandas>=2.2
 numpy>=1.26
 anthropic>=0.40
+scipy>=1.11
